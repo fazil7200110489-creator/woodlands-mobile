@@ -14,9 +14,14 @@ import { ShoppingBag, ChevronRight, Search, Plus, Minus, Heart, X, Phone, MapPin
 import { cn } from "@/lib/utils";
 import { useApp, OrderRecord } from "@/contexts/AppContext";
 
-export default function OrderingClient() {
+interface OrderingClientProps {
+  initialMenu?: MenuItem[];
+  initialSettings?: any;
+}
+
+export default function OrderingClient({ initialMenu, initialSettings }: OrderingClientProps) {
   const { cart, adjust, cartCount, total, activeTab, setActiveTab, wishlist, myOrders, addOrder } = useApp();
-  const [menu, setMenu] = useState<MenuItem[]>([]);
+  const [menu, setMenu] = useState<MenuItem[]>(initialMenu || []);
   const [menuError, setMenuError] = useState<string | null>(null);
   const [drawer, setDrawer] = useState(false);
   const [pickupTime, setPickupTime] = useState("");
@@ -24,8 +29,8 @@ export default function OrderingClient() {
   const [phone, setPhone] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [settings, setSettings] = useState({ shopOpen: true, acceptingOrders: true, busyMode: false, holidayMode: false });
-  const [isLoading, setIsLoading] = useState(true);
+  const [settings, setSettings] = useState(initialSettings || { shopOpen: true, acceptingOrders: true, busyMode: false, holidayMode: false });
+  const [isLoading, setIsLoading] = useState(!initialMenu);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -35,6 +40,7 @@ export default function OrderingClient() {
   const heroY = useTransform(scrollY, [0, 300], [0, 100]);
 
   useEffect(() => {
+    if (initialMenu) return; // Skip if data is provided by server
     const fetchData = async () => {
       try {
         const [menuRes, settingsRes] = await Promise.all([

@@ -26,8 +26,9 @@ export async function connectDB() {
       dbName: "woodlands",
       serverSelectionTimeoutMS: 5000,
     }).catch((err) => {
+      console.error("❌ MongoDB Connection Error:", err.message);
       cache.promise = null;
-      throw err;
+      throw new Error(`Database connection failed: ${err.message}`);
     });
   }
   cache.conn = await cache.promise;
