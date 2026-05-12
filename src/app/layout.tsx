@@ -1,38 +1,31 @@
 import type { Metadata } from "next";
-import { DM_Mono, DM_Serif_Display, Fraunces } from "next/font/google";
-import AppShell from "@/components/AppShell";
+import { Inter } from "next/font/google";
 import MotionProvider from "@/components/MotionProvider";
+import GreetingHeader from "@/components/GreetingHeader";
+import BottomNav from "@/components/BottomNav";
+import { AppProvider } from "@/contexts/AppContext";
 import "./globals.css";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Woodlands Premium Pickup",
   description: "Premium takeaway and self pickup ordering platform",
 };
 
-const dmMono = DM_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-dm-mono",
-});
-
-const dmSerif = DM_Serif_Display({
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: "--font-dm-serif",
-});
-
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-fraunces",
-});
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${dmMono.variable} ${dmSerif.variable} ${fraunces.variable}`}>
-        <MotionProvider>
-          <AppShell>{children}</AppShell>
-        </MotionProvider>
+      <body className={`${inter.className} bg-background antialiased`}>
+        <AppProvider>
+          <MotionProvider>
+            <GreetingHeader />
+            <main className="pt-24 pb-32 min-h-screen">
+              {children}
+            </main>
+            <BottomNav />
+          </MotionProvider>
+        </AppProvider>
       </body>
     </html>
   );

@@ -20,6 +20,12 @@ const config: Config = {
         "oryzo-accent": "#c9b99a",
         "oryzo-gold": "#d4a853",
         "oryzo-red": "#e05c3a",
+        primary: "#4CAF7D",
+        background: "#ffffff",
+        foreground: "#1C1C1E",
+        secondary: "#F4F4F4",
+        muted: "#F9F9F9",
+        border: "#E5E5EA",
       },
       boxShadow: {
         glass: "0 18px 45px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.18)",

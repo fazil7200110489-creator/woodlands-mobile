@@ -62,16 +62,18 @@ export default function Cursor() {
     <>
       <m.div
         style={{ x: dotX, y: dotY, translateX: "-50%", translateY: "-50%" }}
-        className="pointer-events-none fixed left-0 top-0 z-[10000] hidden h-2 w-2 rounded-full bg-white will-change-transform md:block"
+        className="pointer-events-none fixed left-0 top-0 z-[10000] hidden h-1.5 w-1.5 rounded-full bg-primary will-change-transform md:block"
       />
       <m.div
         style={{ x: ringX, y: ringY, translateX: "-50%", translateY: "-50%" }}
         animate={{
-          width: active ? 60 : 40,
-          height: active ? 60 : 40,
+          width: active ? 80 : 32,
+          height: active ? 80 : 32,
+          borderColor: active ? "#4CAF7D" : "#1C1C1E",
+          scale: active ? 1.2 : 1,
         }}
-        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        className="pointer-events-none fixed left-0 top-0 z-[9999] hidden items-center justify-center rounded-full border border-white text-[9px] tracking-[0.14em] text-white mix-blend-difference will-change-transform md:flex"
+        transition={{ type: "spring" as const, stiffness: 300, damping: 20 }}
+        className="pointer-events-none fixed left-0 top-0 z-[9999] hidden items-center justify-center rounded-full border text-[10px] font-bold tracking-[0.14em] text-primary will-change-transform md:flex"
       >
         {label}
       </m.div>

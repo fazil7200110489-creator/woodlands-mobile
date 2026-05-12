@@ -2,71 +2,128 @@
 
 import Image from "next/image";
 import { m } from "framer-motion";
-import { useState } from "react";
+import { Heart, Plus, Minus, ShoppingBag } from "lucide-react";
 import { MenuItem } from "@/lib/types";
-import MagneticButton from "@/components/MagneticButton";
 import { toCurrency } from "@/lib/pickup";
+import { cn } from "@/lib/utils";
+import { useApp } from "@/contexts/AppContext";
 
 type Props = {
   item: MenuItem;
   qty: number;
   onAdjust: (item: MenuItem, delta: number) => void;
+  onSelect: (item: MenuItem) => void;
 };
 
-export default function FoodCard({ item, qty, onAdjust }: Props) {
-  const [rotateX, setRotateX] = useState(0);
-  const [rotateY, setRotateY] = useState(0);
-
-  const handleMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientY - rect.top - rect.height / 2) / 15;
-    const y = -(e.clientX - rect.left - rect.width / 2) / 15;
-    setRotateX(x);
-    setRotateY(y);
-  };
+export default function FoodCard({ item, qty, onAdjust, onSelect }: Props) {
+  const { toggleWishlist, isWishlisted } = useApp();
+  const id = item._id || item.name;
+  const liked = isWishlisted(id);
 
   return (
-    <div className="perspective-[1000px]" data-reveal-card>
-      <m.article
-        onMouseMove={handleMouseMove}
-        onMouseLeave={() => {
-          setRotateX(0);
-          setRotateY(0);
+    <m.div
+      whileHover={{ scale: 1.03, y: -6 }}
+      transition={{ type: "spring" as const, stiffness: 300, damping: 20 }}
+      onClick={() => onSelect(item)}
+      className="group relative bg-white rounded-[20px] overflow-hidden shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)] border border-border cursor-pointer"
+    >
+      {/* Out of stock badge only */}
+      {!item.inStock && (
+        <div className="absolute top-4 left-4 z-10">
+          <div className="bg-destructive/90 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+            Sold Out
+          </div>
+        </div>
+      )}
+
+      {/* Heart / Wishlist Icon */}
+      <m.button
+        whileTap={{ scale: 0.8 }}
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleWishlist(item);
         }}
-        style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="group grid gap-4 border border-white/10 bg-[#0f0f0f] p-4 transition hover:border-[rgba(212,168,83,0.3)] hover:shadow-[0_30px_60px_rgba(0,0,0,0.5)] md:grid-cols-[170px_1fr_auto]"
+        className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-white/80 backdrop-blur-md shadow-sm transition-all"
       >
-        <div className="relative aspect-[4/3] overflow-hidden" data-cursor="view">
-          <Image
-            src={item.image}
-            alt={item.name}
-            width={260}
-            height={190}
-            loading="lazy"
-            sizes="(max-width: 768px) 100vw, 33vw"
-            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD"
-            placeholder="blur"
-            className="h-full w-full object-cover grayscale-[10%] transition duration-500 ease-out group-hover:scale-[1.03] group-hover:grayscale-0"
-            style={{ transform: "translateZ(20px)" }}
-          />
-          <span className="absolute left-2 top-2 bg-black/70 px-2 py-1 text-[10px] uppercase tracking-[0.1em] text-oryzo-accent">{item.category}</span>
+        <Heart
+          className={cn(
+            "w-5 h-5 transition-colors",
+            liked ? "fill-red-500 text-red-500" : "text-foreground/40"
+          )}
+        />
+      </m.button>
+
+      {/* Image Section */}
+      <div className="relative aspect-square overflow-hidden bg-secondary">
+        <Image
+          src={item.image}
+          alt={item.name}
+          fill
+          sizes="(max-width: 768px) 100vw, 33vw"
+          className="object-cover transition-transform duration-700 group-hover:scale-110"
+        />
+        {/* Floating Price */}
+        <div className="absolute bottom-4 right-4 bg-[#1C1C1E] text-white px-3 py-1.5 rounded-xl font-bold text-sm shadow-lg">
+          {toCurrency(item.price)}
         </div>
-        <div>
-          <h3 className="font-display mt-1 text-2xl text-oryzo-warm">{item.name}</h3>
-          <p className="font-serif mt-2 max-w-xl text-[13px] leading-6 text-oryzo-muted">Crafted for quick pickup with premium flavor balance and consistent quality.</p>
-          <p className="mt-3 text-[15px] text-oryzo-gold">{toCurrency(item.price)}</p>
-          <p className="mt-1 text-[11px] text-oryzo-muted">★ 4.8 · 230 reviews</p>
-          {!item.inStock && <span className="mt-3 inline-block border border-oryzo-red bg-oryzo-red/15 px-2 py-0.5 text-[9px] uppercase tracking-[0.15em] text-oryzo-red">Out of Stock</span>}
+      </div>
+
+      {/* Content */}
+      <div className="p-5">
+        <h3 className="font-bold text-lg text-[#1C1C1E] line-clamp-1 mb-1">{item.name}</h3>
+        <p className="text-xs text-muted-foreground mb-4 line-clamp-2 leading-relaxed">
+          Fresh {item.category.toLowerCase()} prepared for your pickup. Great taste guaranteed.
+        </p>
+
+        <div className="flex items-center justify-between gap-3">
+          <div
+            className="flex items-center bg-secondary rounded-full p-1 border border-border"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <m.button
+              whileTap={{ scale: 0.8 }}
+              onClick={() => onAdjust(item, -1)}
+              disabled={qty === 0}
+              className="p-1.5 rounded-full hover:bg-white transition-colors disabled:opacity-30"
+            >
+              <Minus className="w-4 h-4 text-foreground" />
+            </m.button>
+            <span className="w-8 text-center text-sm font-bold">{qty}</span>
+            <m.button
+              whileTap={{ scale: 0.8 }}
+              onClick={() => onAdjust(item, 1)}
+              disabled={!item.inStock}
+              className="p-1.5 rounded-full bg-white shadow-sm hover:bg-primary hover:text-white transition-colors disabled:opacity-30"
+            >
+              <Plus className="w-4 h-4" />
+            </m.button>
+          </div>
+
+          <m.button
+            whileTap={{ scale: 0.95 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (qty === 0) onAdjust(item, 1);
+            }}
+            disabled={!item.inStock}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-full font-bold text-sm transition-all",
+              qty > 0
+                ? "bg-primary text-white"
+                : "bg-[#1C1C1E] text-white hover:bg-primary disabled:opacity-40"
+            )}
+          >
+            {qty > 0 ? (
+              <>
+                <ShoppingBag className="w-4 h-4" />
+                <span>In Bag ({qty})</span>
+              </>
+            ) : (
+              <span>{item.inStock ? "Add to Cart" : "Unavailable"}</span>
+            )}
+          </m.button>
         </div>
-        <div className="flex items-end gap-2 md:items-center">
-          <button className="h-9 w-9 rounded-full border border-white/15 text-sm" onClick={() => onAdjust(item, -1)}>-</button>
-          <span className="w-6 text-center text-[13px]">{qty}</span>
-          <MagneticButton disabled={!item.inStock} className="border border-white/15 px-4 py-2 text-[11px] uppercase tracking-[0.15em] text-oryzo-warm transition hover:border-oryzo-gold hover:bg-oryzo-gold hover:text-black disabled:cursor-not-allowed disabled:opacity-35" onClick={() => onAdjust(item, 1)}>
-            Add
-          </MagneticButton>
-        </div>
-      </m.article>
-    </div>
+      </div>
+    </m.div>
   );
 }
