@@ -10,7 +10,8 @@ export async function GET() {
     return NextResponse.json(data);
   } catch (err) {
     console.error("[GET /api/menu]", err);
-    return NextResponse.json({ error: "Failed to load menu" }, { status: 500 });
+    const message = err instanceof Error ? err.message : "Failed to load menu";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

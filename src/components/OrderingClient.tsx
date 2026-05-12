@@ -51,15 +51,19 @@ export default function OrderingClient({ initialMenu, initialSettings }: Orderin
           const menuData = await menuRes.json();
           if (Array.isArray(menuData)) setMenu(menuData);
         } else {
-          setMenuError("Unable to load menu.");
+          const errData = await menuRes.json().catch(() => ({}));
+          setMenuError(errData.error || "Unable to load menu.");
         }
         if (settingsRes.ok) {
           const settingsData = await settingsRes.json();
           if (settingsData && !settingsData.error) setSettings(settingsData);
+        } else {
+          const errData = await settingsRes.json().catch(() => ({}));
+          setMenuError(prev => prev || errData.error || "Unable to load settings.");
         }
       } catch (err) {
         console.error("Fetch error:", err);
-        setMenuError("Something went wrong.");
+        setMenuError(err instanceof Error ? err.message : "Something went wrong.");
       } finally {
         setIsLoading(false);
       }

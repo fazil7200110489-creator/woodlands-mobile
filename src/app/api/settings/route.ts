@@ -10,7 +10,8 @@ export async function GET() {
     return NextResponse.json(settings);
   } catch (err) {
     console.error("[GET /api/settings]", err);
-    return NextResponse.json({ error: "Failed to load settings" }, { status: 500 });
+    const message = err instanceof Error ? err.message : "Failed to load settings";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
