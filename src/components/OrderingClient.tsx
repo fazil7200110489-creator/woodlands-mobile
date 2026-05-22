@@ -10,6 +10,7 @@ import FoodCard from "@/components/FoodCard";
 import CategoryPills from "@/components/CategoryPills";
 import CountdownTimer from "@/components/CountdownTimer";
 import FoodDetailSheet from "@/components/FoodDetailSheet";
+import PaymentModal from "@/components/PaymentModal";
 import { ShoppingBag, ChevronRight, Search, Plus, Minus, Heart, X, Phone, MapPin, Receipt, Download, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useApp, OrderRecord } from "@/contexts/AppContext";
@@ -33,6 +34,9 @@ export default function OrderingClient({ initialMenu, initialSettings }: Orderin
   const [isLoading, setIsLoading] = useState(!initialMenu);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isOpeningPayment, setIsOpeningPayment] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const { scrollY } = useScroll();
   const heroOpacity = useTransform(scrollY, [0, 300], [1, 0]);
@@ -119,12 +123,24 @@ Thank you for your order!
     }
     if (!pickupTime || disabled) return;
 
+    setIsOpeningPayment(true);
+    setIsPaymentModalOpen(true);
+
+    // Simulate some loading for "Opening payment..." within the modal
+    setTimeout(() => {
+      setIsOpeningPayment(false);
+    }, 1500);
+  };
+
+  const handlePaymentConfirm = async (screenshotUrl: string) => {
+    setIsRedirecting(true);
     const payload = {
       customerName: name,
       customerPhone: phone,
       pickupTime,
       items: lines.map((x) => ({ itemId: x.item._id, name: x.item.name, price: x.item.price, qty: x.qty })),
       totalAmount: total,
+      paymentScreenshot: screenshotUrl,
     };
 
     try {
@@ -137,16 +153,19 @@ Thank you for your order!
       
       // Add to local history
       addOrder({
-        id: data.orderId || Math.random().toString(36).substr(2, 9),
+        id: data.orderId || crypto.randomUUID(),
         date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
         items: lines.map(l => ({ name: l.item.name, price: l.item.price, qty: l.qty })),
         total,
         pickupTime
       });
 
+      setIsPaymentModalOpen(false);
+      setIsRedirecting(false);
       if (data.redirectUrl) window.location.href = data.redirectUrl;
     } catch (err) {
       console.error("Order error:", err);
+      setIsRedirecting(false);
     }
   };
 
@@ -308,6 +327,14 @@ Thank you for your order!
       <AnimatePresence>{cartCount > 0 && activeTab !== "bag" && (<m.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-24 left-6 right-6 z-40"><button onClick={() => setDrawer(true)} className="w-full bg-[#1C1C1E] text-white p-4 rounded-2xl flex items-center justify-between shadow-2xl active:scale-95 transition-transform"><div className="flex items-center gap-3"><div className="bg-primary p-2 rounded-xl"><ShoppingBag className="w-5 h-5" /></div><div className="text-left"><p className="text-xs text-white/60 font-medium">{cartCount} Items in Bag</p><p className="text-sm font-bold">{toCurrency(total)}</p></div></div><div className="flex items-center gap-1 font-bold text-sm"><span>View Cart</span><ChevronRight className="w-4 h-4" /></div></button></m.div>)}</AnimatePresence>
       <AnimatePresence>{(drawer || activeTab === "bag") && (<><m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => { setDrawer(false); if (activeTab === "bag") setActiveTab("home"); }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]" /><m.aside initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring" as const, damping: 25, stiffness: 200 }} className="fixed inset-x-0 bottom-0 z-[70] bg-white rounded-t-[40px] max-h-[90vh] overflow-hidden flex flex-col"><div className="w-12 h-1.5 bg-border rounded-full mx-auto my-4" /><div className="px-8 pb-8 flex-1 overflow-y-auto no-scrollbar"><div className="flex items-center justify-between mb-8"><h3 className="text-2xl font-bold">My Order</h3><button onClick={() => { setDrawer(false); if (activeTab === "bag") setActiveTab("home"); }} className="text-muted-foreground font-bold text-sm">Close</button></div>{lines.length === 0 ? <div className="py-20 text-center"><p className="text-muted-foreground">Your bag is empty</p></div> : <><div className="space-y-6">{lines.map((l) => (<div key={l.item._id || l.item.name} className="flex gap-4"><div className="relative w-20 h-20 rounded-2xl overflow-hidden shrink-0 bg-secondary"><Image src={l.item.image} alt={l.item.name} fill className="object-cover" /></div><div className="flex-1 flex flex-col justify-center"><h4 className="font-bold text-foreground">{l.item.name}</h4><p className="text-primary font-bold text-sm">{toCurrency(l.item.price)}</p></div><div className="flex items-center gap-3 bg-secondary rounded-full px-3 py-1 self-center"><button onClick={() => adjust(l.item, -1)} className="p-1"><Minus className="w-4 h-4" /></button><span className="font-bold text-sm">{l.qty}</span><button onClick={() => adjust(l.item, 1)} className="p-1"><Plus className="w-4 h-4" /></button></div></div>))}</div><div className="mt-10 space-y-4"><div className="bg-secondary p-5 rounded-2xl space-y-3"><p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Pickup Details</p><select className="w-full bg-white border border-border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)}>{slots.map((s) => <option key={s} value={s}>{s}</option>)}</select><input className="w-full bg-white border border-border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" placeholder="Your Name *" value={name} onChange={(e) => { setName(e.target.value); setValidationError(null); }} /><input className="w-full bg-white border border-border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" placeholder="Phone Number *" type="tel" value={phone} onChange={(e) => { setPhone(e.target.value); setValidationError(null); }} />{validationError && <p className="text-destructive text-xs font-bold px-1">{validationError}</p>}</div><div className="flex items-center justify-between px-2"><span className="text-muted-foreground font-medium">Total</span><span className="text-2xl font-bold">{toCurrency(total)}</span></div><button onClick={placeOrder} disabled={!lines.length || disabled} className={cn("w-full text-white py-5 rounded-[20px] font-bold text-lg shadow-xl transition-colors disabled:opacity-40", disabled ? "bg-muted-foreground" : "bg-[#1C1C1E] hover:bg-primary")}>Place Order via WhatsApp</button>{disabled && <p className="text-destructive text-center text-xs font-bold">Currently Closed</p>}</div></>}</div></m.aside></>)}</AnimatePresence>
       <FoodDetailSheet item={selectedItem} isOpen={!!selectedItem} onClose={() => setSelectedItem(null)} qty={selectedItem ? (cart[selectedItem._id || selectedItem.name]?.qty ?? 0) : 0} onAdjust={adjust} />
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        total={total}
+        onConfirm={handlePaymentConfirm}
+        isOpeningPayment={isOpeningPayment}
+        isRedirecting={isRedirecting}
+      />
     </div>
   );
 }

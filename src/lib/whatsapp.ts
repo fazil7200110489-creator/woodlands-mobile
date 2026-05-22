@@ -4,13 +4,33 @@ type WAOrder = {
   items: { name: string; qty: number; price: number }[];
   totalAmount: number;
   pickupTime: string;
+  customerName?: string;
+  paymentScreenshot?: string;
 };
 
 export function buildOrderMessage(order: WAOrder) {
-  const items = order.items
-    .map((i) => `${i.name} x${i.qty} - ${toCurrency(i.price * i.qty)}`)
-    .join("\n");
-  return `Hi, I would like to place an order.\n\nItems:\n${items}\n\nTotal Amount: ${toCurrency(order.totalAmount)}\nPickup Time: ${order.pickupTime}\n\nPlease confirm my order.`;
+  const itemsList = order.items
+    .map((i) => `${i.name} (x${i.qty})`)
+    .join(", ");
+
+  const quantities = order.items.reduce((acc, i) => acc + i.qty, 0);
+
+  let message = `Hello, I have completed the payment for my order.\n\n`;
+  if (order.customerName) {
+    message += `Customer: ${order.customerName}\n`;
+  }
+  message += `Product: ${itemsList}\n`;
+  message += `Quantity: ${quantities}\n`;
+  message += `Total Amount: ${toCurrency(order.totalAmount)}\n`;
+  message += `Pickup Time: ${order.pickupTime}\n\n`;
+
+  if (order.paymentScreenshot) {
+    message += `Payment screenshot: ${order.paymentScreenshot}\n\n`;
+  } else {
+    message += `Payment screenshot attached below.\n\n`;
+  }
+
+  return message.trim();
 }
 
 export function buildWhatsAppRedirect(message: string, to = "9840489878") {

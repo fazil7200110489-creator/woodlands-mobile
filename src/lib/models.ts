@@ -18,6 +18,7 @@ const orderSchema = new Schema(
     pickupTime: String,
     items: [{ itemId: String, name: String, price: Number, qty: Number }],
     totalAmount: Number,
+    paymentScreenshot: String,
     status: { type: String, enum: ["Pending", "Completed", "Cancelled"], default: "Pending" },
   },
   { timestamps: true },
