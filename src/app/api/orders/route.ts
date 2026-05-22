@@ -11,6 +11,8 @@ export async function POST(req: Request) {
     items: body.items,
     pickupTime: body.pickupTime,
     totalAmount: body.totalAmount,
+    customerName: body.customerName,
+    paymentScreenshot: body.paymentScreenshot ? `${process.env.NEXT_PUBLIC_BASE_URL || ''}${body.paymentScreenshot}` : undefined,
   });
   return NextResponse.json({
     orderId: order._id,
